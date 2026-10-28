@@ -83,6 +83,27 @@ def test_intcomma(
     assert humanize.intcomma(*test_args) == expected
 
 
+@pytest.mark.parametrize(
+    "test_args, expected",
+    [
+        ([1e15], "1,000,000,000,000,000.0"),
+        ([1e16], "10,000,000,000,000,000.0"),
+        ([1.5e20], "150,000,000,000,000,000,000.0"),
+        ([1e-5], "0.00001"),
+        ([5e-5], "0.00005"),
+        ([1.5e-5], "0.000015"),
+        ([-1e-5], "-0.00001"),
+        ([-2.5e-7], "-0.00000025"),
+        (["1e16"], "10,000,000,000,000,000.0"),
+        (["-2.5e-7"], "-0.00000025"),
+    ],
+)
+def test_intcomma_avoids_scientific_notation(
+    test_args: list[int] | list[float] | list[str], expected: str
+) -> None:
+    assert humanize.intcomma(*test_args) == expected
+
+
 @pytest.mark.parametrize("sign", [1, -1])
 def test_intcomma_large_integer(sign: int) -> None:
     value = sign * (10**400 + 123)

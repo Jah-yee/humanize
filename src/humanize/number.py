@@ -140,6 +140,22 @@ def ordinal(value: NumberOrString, gender: str = "male") -> str:
     return f"{value}{P_(*_ORDINAL_SUFFIXES[gender][digit])}"
 
 
+def _comma_separate_float(value: float) -> str:
+    """Format a float with thousands separators and without scientific notation.
+
+    ``f"{value:,}"`` switches to an exponent once the value is too large or too
+    small to be printed positionally (``1e16``, ``1e-05``), so ``intcomma(1e16)``
+    returns ``"1e+16"`` instead of a comma separated number. Formatting the
+    decimal expansion of the value keeps the separators and the sign of small
+    numbers.
+    """
+    from decimal import Decimal
+
+    integer, _, fraction = format(Decimal(repr(value)), "f").partition(".")
+    sign = "-" if integer.startswith("-") else ""
+    return f"{sign}{int(integer.lstrip('-')):,}.{fraction or '0'}"
+
+
 def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:
     """Converts an integer to a string containing commas every three digits.
 
@@ -183,7 +199,7 @@ def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:
             value = value.replace(thousands_sep, "").replace(decimal_sep, ".")
             if not math.isfinite(float(value)):
                 return _format_not_finite(float(value))
-            if "." in value:
+            if "." in value or "e" in value.lower():
                 value = float(value)
             else:
                 value = int(value)
@@ -196,6 +212,8 @@ def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:
 
     if ndigits is not None:
         result = f"{value:,.{ndigits}f}"
+    elif isinstance(value, float):
+        result = _comma_separate_float(value)
     else:
         result = f"{value:,}"
     if thousands_sep != "," or decimal_sep != ".":
